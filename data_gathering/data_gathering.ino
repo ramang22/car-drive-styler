@@ -1,6 +1,5 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
-//#include <U8g2lib.h>
 #include<Wire.h>
 #include <SD.h>
 
@@ -12,7 +11,7 @@
 #define EN 10
 #define RW 9
 #define RS 8
-
+#define TEXTFILE "aup1.csv"
 
 // gyro act setup
 float AccX, AccY, AccZ;
@@ -47,6 +46,13 @@ void setup() {
   Wire.endTransmission(true);
 
   calculate_IMU_error();
+
+  File myFile = SD.open(TEXTFILE, FILE_WRITE);
+  if (myFile) {
+    Serial.print("done");
+    myFile.println(F("date;gforce;speed;AccX;AccY;AccZ;GyroX;GyroY;GyroZ"));
+    myFile.close();
+  }
 }
 
 void loop() {
@@ -56,7 +62,7 @@ void loop() {
   char datumCas[32];
   bool newDataLoaded = false;
 
-  File myFile = SD.open("khanke.txt", FILE_WRITE);
+  File myFile = SD.open(TEXTFILE, FILE_WRITE);
 
   for (unsigned long start = millis(); millis() - start < 1000;) {
     while (swSerial.available()) {
@@ -86,12 +92,13 @@ void loop() {
     GyroX = (Wire.read() << 8 | Wire.read()) / 131.0;
     GyroX -= GyroErrorX;
     GyroY = (Wire.read() << 8 | Wire.read()) / 131.0;
-    GyroX -= GyroErrorY;
+    GyroY -= GyroErrorY;
     GyroZ = (Wire.read() << 8 | Wire.read()) / 131.0;
     GyroZ -= GyroErrorZ;
 
     gForce = sqrt(AccX * AccX + AccY * AccY + AccZ * AccZ);
     if (myFile) {
+      Serial.print("done2");
       myFile.print(datumCas);
       myFile.print(F(";"));
       myFile.print(gForce);
@@ -109,7 +116,6 @@ void loop() {
       myFile.print(GyroY);
       myFile.print(F(";"));
       myFile.print(GyroZ);
-      myFile.println(F(";"));
       myFile.close();
     }
   }
@@ -122,9 +128,9 @@ void calculate_IMU_error() {
     Wire.write(0x3B);
     Wire.endTransmission(false);
     Wire.requestFrom(MPU, 6, true);
-    AccX = (Wire.read() << 8 | Wire.read()) / 16384.0 ;
-    AccY = (Wire.read() << 8 | Wire.read()) / 16384.0 ;
-    AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0 ;
+    AccX = (Wire.read() << 8 | Wire.read()) / 2048.0 ;
+    AccY = (Wire.read() << 8 | Wire.read()) / 2048.0 ;
+    AccZ = (Wire.read() << 8 | Wire.read()) / 2048.0 ;
     // Sum all readings
     AccErrorX = AccErrorX + ((atan((AccY) / sqrt(pow((AccX), 2) + pow((AccZ), 2))) * 180 / PI));
     AccErrorY = AccErrorY + ((atan(-1 * (AccX) / sqrt(pow((AccY), 2) + pow((AccZ), 2))) * 180 / PI));
