@@ -27,6 +27,11 @@ int refresh = 0;
 const int MPU = 0x68;
 int16_t  AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 
+String GOOD = "GOOD";
+String MEDIUM = "MEDIUM";
+String BAD = "BAD";
+String RACER = "RACER";
+int type = 0;
 SoftwareSerial swSerial(RX, TX);
 TinyGPS gps;
 
@@ -99,6 +104,15 @@ void loop() {
     } while ( lcd.nextPage() );
     refresh = millis();
   }
+  if (speed > 100) {
+    type = 4;
+  } else if (gForce > 2) {
+    type = 3;
+  } else if (gForce <= 1) {
+    type = 1;
+  } else {
+    type = 0;
+  }
 }
 
 
@@ -121,6 +135,15 @@ void printTest(unsigned long gForce, int speed) {
   lcd.print("GZ :");
   lcd.print(GyZ);
   lcd.setCursor(0, 63);
-  lcd.print("Satellites :");
-  lcd.print(gps.satellites());
+  lcd.print("Style : ");
+  if (type == 1) {
+    lcd.print(GOOD);
+  } else if (type == 2) {
+    lcd.print(MEDIUM);
+  } else if (type == 3) {
+    lcd.print(BAD);
+  } else {
+    lcd.print(RACER);
+
+  }
 }
